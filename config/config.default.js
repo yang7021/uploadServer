@@ -49,7 +49,7 @@ module.exports = appInfo => {
       domainWhiteList: [ 'http://localhost:8080', 'http://127.0.0.1:8080' ], // 配置白名单
     },
     mongoose: {
-      url: 'mongodb://localhost:27017/front',
+      url: 'mongodb://upload:upload456234%40%40!!%23%24%40@182.92.109.46:27017/?authSource=upload',
       option: {},
     },
     jwt: {
