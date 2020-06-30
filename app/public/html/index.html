@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div class="preview_content">
+        <!-- <img class="preview_img" src="http://127.0.0.1:7001/public/files/db34c77121e2269e4fc8d35e6883ea53.gif" alt=""> -->
+        <canvas id="canvas" width="500px" height="500px"></canvas>
+        <div class="square_group" id="square_group">
+
+        </div>
+    </div>
+    <div class="btn_group">
+        <div id="btn" class="_btn">上传</div>
+        <input id="input" class="_input" type="file">
+    </div>
+</body>
+<script src="./axios.js"></script>
+<script type="module">
+    import shardUpload from './upload/index.js'
+    function getIdEl(id) {
+        return document.getElementById(id)
+    }
+    function createEl(el) {
+        return document.createElement('div')
+    }
+    function setElStyle(el, key, val) {
+        console.dir(el, key, val)
+        el['style'][key] = val
+    }
+    let up = new shardUpload.create({
+        CHUNK_SIZE: 1 * 1024 * 1024,
+        ajax: axios,
+        // checkfile: 'http://182.92.109.46:7001/checkfile',
+        // uploadfile: 'http://182.92.109.46:7001/uploadfile',
+        // mergefile: 'http://182.92.109.46:7001/mergefile',
+        checkfile: 'http://127.0.0.1:7001/checkfile',
+        uploadfile: 'http://127.0.0.1:7001/uploadfile',
+        mergefile: 'http://127.0.0.1:7001/mergefile',
+    })
+    let ctx = getIdEl('canvas').getContext('2d')
+    let squareGroup = getIdEl('square_group')
+    let input = getIdEl('input')
+    let btn = getIdEl('btn')
+    window.ctx = ctx
+    btn.onclick = function () {
+        input.click()
+    }
+
+// 对象中传回调函数
+
+
+    input.onchange = async function upload(e) {
+        // 上传前 清理画布
+        ctx.clearRect(0,0,500,500);  
+        await up.uploadFile(e.target.files[0], async function (res, next) {
+            // uploaded 为true 已上传，不需要调用nuxt， url有服务端地址， 
+            // uploaded 为false 未上传，需要调用nuxt
+            // if(res.data.data.uploaded) {
+            //     console.log('上传成功')
+            //     return
+            // }
+
+            let ratio = await setCanvas(e.target.files[0])
+
+            let len = this.chunks.length
+
+            let rowCount = Math.round(Math.sqrt(len))
+
+            // 取余判断最后一行，取不到就用 rowcount
+            let endCount = len % rowCount
+            while(len > 0) {
+                let el = createEl('div')
+                if(len < endCount || len < rowCount) {
+                    el.classList.add('end')
+                }
+                
+
+
+
+                squareGroup.append(el)
+                len -= 1
+            }
+            
+            console.log(this.chunks.length)
+            
+            // 文件验证 待开发
+            // 进度条 待开发
+            let data = await next(res.data.data.uploadList)
+            // let data =  await next(123)
+            console.log(data, this)
+        })
+
+        // up.uploadFile(e.target.files[0]).then(async res => {
+        //     // 已上传
+        //     if(res.data.data.uploaded) {
+        //         console.log('上传成功')
+        //         return
+        //     }
+        //     console.log(res, await up.next(res.data.data.uploadList))
+        // })
+    }
+
+
+    function setCanvas(imgFile) {
+        return new Promise(resolve => {
+            var a = new Image()
+            a.onload = () => {
+                let [marginTop, marginLeft, width, height] = Array(4).fill(0)
+                let ratio = a.width / a.height
+                if(ratio > 1) {
+                    width = 500
+                    
+                    height = parseInt(a.height / (a.width / 500))
+                    marginTop = (500 - height) / 2
+                } else {
+                    height = 500
+                    
+                    width = parseInt(a.width / (a.height / 500))
+                    marginLeft = (500 - width) / 2
+                }
+
+                setElStyle(squareGroup, 'width', width + 'px')
+                setElStyle(squareGroup, 'height', height + 'px')
+                setElStyle(squareGroup, 'left', marginLeft + 'px')
+                setElStyle(squareGroup, 'top', marginTop + 'px')
+
+                ctx.drawImage(a, marginLeft, marginTop, width, height)
+
+                resolve(ratio)
+            }
+            a.src = URL.createObjectURL(imgFile)
+        })
+        
+    }
+
+</script>
+
+</html>
