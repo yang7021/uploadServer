@@ -4,5 +4,8 @@
 // }
 
 export default {
-    CHUNK_SIZE: 0.1 * 1024 * 1024
+    config: {
+        CHUNK_SIZE: 0.1 * 1024 * 1024,
+    },
+    methods: {}
 }

@@ -2,9 +2,10 @@
 
 import '../helpers/spark-md5.min.js'
 
-function ShardUpload(config) {
-  this.config = config
+function ShardUpload(data) {
+  this.config = data.config
   this.chunks = []
+  this.methods = data.methods || {}
 }
 
 // 文件分片
@@ -19,6 +20,7 @@ ShardUpload.prototype.createFileChunk = function (file, size = this.config.CHUNK
     cur += size
   }
   this.chunks = chunks
+  this.methods['chunkAfter'] && this.methods['chunkAfter'].call(this)
   return this
 }
 
@@ -68,6 +70,7 @@ ShardUpload.prototype.calculateHashSample = function () {
 
 // 1.上传文件
 ShardUpload.prototype.uploadFile = async function (file, fn) {
+  console.log(this)
   // return new Promise(async resolve => {
     if (file) {
       this.file = file
@@ -107,7 +110,7 @@ ShardUpload.prototype.uploadFile = async function (file, fn) {
           chunk: chunk.file,
           // 设置进度条，已经上传的设为100
           // progress: uploadList.indexOf(name) > 0 ? 100 : 0,
-          progress: '123azsda'
+          progress: uploadList.indexOf(name) > -1 ? 100 : 0
         }
       })
       return await this.uploadChunks(uploadList)
@@ -190,6 +193,7 @@ ShardUpload.prototype.sendRequest = async function (chunks, limit = 3) {
             onUploadProgress: progress => {
               // 不是整体的进度条了，而是每个区块有自己的进度条，整体的进度条需要计算
               this.chunks[index].progress = Number(((progress.loaded / progress.total) * 100).toFixed(2))
+              this.methods['chunkProgress'] && this.methods['chunkProgress'].call(this, index)
             }
           })
           if (count === len - 1) {

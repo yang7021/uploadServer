@@ -10,11 +10,39 @@
 </head>
 
 <body>
-    <div class="preview_content">
-        <!-- <img class="preview_img" src="http://127.0.0.1:7001/public/files/db34c77121e2269e4fc8d35e6883ea53.gif" alt=""> -->
-        <canvas id="canvas" width="500px" height="500px"></canvas>
-        <div class="square_group" id="square_group">
+    <div class="main_content">
+        <div class="content_item">
+            <h2>分片进度预览</h2>
+            <div class="preview_content">
+                <canvas id="canvas1" width="398px" height="398px"></canvas>
+                <div class="square_group" id="square_group"></div>
+            </div>
+            <div id="progress_group"></div>
+        </div>
 
+        <div class="content_item">
+            <h2>分片总进度预览</h2>
+            <div class="preview_content">
+
+                <canvas id="canvas2" width="398px" height="398px"></canvas>
+                <div class="square_group" id="square_region">
+                    <div class="group group_sum">
+                        <div class="child"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="content_item">
+            <h2>普通上传预览</h2>
+            <div class="preview_content">
+                <canvas id="canvas3" width="398px" height="398px"></canvas>
+                <div class="square_group" id="square_general">
+                    <div class="group group_sum">
+                        <div class="child"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="progress_general"></div>
         </div>
     </div>
     <div class="btn_group">
@@ -25,6 +53,20 @@
 <script src="./axios.js"></script>
 <script type="module">
     import shardUpload from './upload/index.js'
+
+    let ctx1 = getIdEl('canvas1').getContext('2d'),
+        ctx2 = getIdEl('canvas2').getContext('2d'),
+        ctx3 = getIdEl('canvas3').getContext('2d'),
+        // 容器
+        squareGroup = getIdEl('square_group'),
+        // 容器方块
+        squareRegion = document.querySelector('#square_region .child'),
+        squareGeneral = document.querySelector('#square_general .child'),
+        // 进度数
+        progressGroupCount = getIdEl('progress_group'),
+        progressGeneralCount = getIdEl('progress_general'),
+        input = getIdEl('input'),
+        btn = getIdEl('btn');
     function getIdEl(id) {
         return document.getElementById(id)
     }
@@ -32,115 +74,195 @@
         return document.createElement('div')
     }
     function setElStyle(el, key, val) {
-        console.dir(el, key, val)
         el['style'][key] = val
     }
-    let up = new shardUpload.create({
-        CHUNK_SIZE: 1 * 1024 * 1024,
-        ajax: axios,
-        // checkfile: 'http://182.92.109.46:7001/checkfile',
-        // uploadfile: 'http://182.92.109.46:7001/uploadfile',
-        // mergefile: 'http://182.92.109.46:7001/mergefile',
-        checkfile: 'http://127.0.0.1:7001/checkfile',
-        uploadfile: 'http://127.0.0.1:7001/uploadfile',
-        mergefile: 'http://127.0.0.1:7001/mergefile',
-    })
-    let ctx = getIdEl('canvas').getContext('2d')
-    let squareGroup = getIdEl('square_group')
-    let input = getIdEl('input')
-    let btn = getIdEl('btn')
-    window.ctx = ctx
-    btn.onclick = function () {
-        input.click()
-    }
-
-// 对象中传回调函数
-
-
-    input.onchange = async function upload(e) {
-        // 上传前 清理画布
-        ctx.clearRect(0,0,500,500);  
-        await up.uploadFile(e.target.files[0], async function (res, next) {
-            // uploaded 为true 已上传，不需要调用nuxt， url有服务端地址， 
-            // uploaded 为false 未上传，需要调用nuxt
-            // if(res.data.data.uploaded) {
-            //     console.log('上传成功')
-            //     return
-            // }
-
-            let ratio = await setCanvas(e.target.files[0])
-
-            let len = this.chunks.length
-
-            let rowCount = Math.round(Math.sqrt(len))
-
-            // 取余判断最后一行，取不到就用 rowcount
-            let endCount = len % rowCount
-            while(len > 0) {
+    // this.divWidth, this.divHeight, endHWidth, divGroup, endCount
+    let divGroupList1 = []
+    function createChunkElGroup(arg) {
+        // 先清空
+        divGroupList1 = []
+        // 普通上传
+        setElStyle(squareGeneral, 'height', '100%')
+        // 设置最后一组都数量
+        arg.divGroup[arg.divGroup.length - 1] = new Array(arg.endCount).fill()
+        for (let i = 0; i < arg.divGroup.length; i++) {
+            let group = createEl('div')
+            group.classList.add('group')
+            setElStyle(group, 'height', arg.divHeight + 'px')
+            for (let j = 0; j < arg.divGroup[i].length; j++) {
                 let el = createEl('div')
-                if(len < endCount || len < rowCount) {
+                el.classList.add('child')
+                setElStyle(el, 'width', arg.divWidth + 'px')
+                setElStyle(el, 'height', arg.divHeight + 'px')
+                if (i === arg.divGroup.length - 1) {
                     el.classList.add('end')
+                    setElStyle(el, 'width', arg.endHWidth + 'px')
                 }
-                
-
-
-
-                squareGroup.append(el)
-                len -= 1
+                // 添加到分组
+                group.append(el)
+                // 添加到数组 供进度变化使用
+                divGroupList1.push(el)
             }
-            
-            console.log(this.chunks.length)
-            
-            // 文件验证 待开发
-            // 进度条 待开发
-            let data = await next(res.data.data.uploadList)
-            // let data =  await next(123)
-            console.log(data, this)
-        })
-
-        // up.uploadFile(e.target.files[0]).then(async res => {
-        //     // 已上传
-        //     if(res.data.data.uploaded) {
-        //         console.log('上传成功')
-        //         return
-        //     }
-        //     console.log(res, await up.next(res.data.data.uploadList))
-        // })
+            squareGroup.append(group)
+        }
     }
+    let imgWidth = 0,
+        imgHeight = 0,
+        up = new shardUpload.create({
+            config: {
+                CHUNK_SIZE: 6 * 1024 * 1024,
+                ajax: axios,
+                // checkfile: 'http://182.92.109.46:7001/checkfile',
+                // uploadfile: 'http://182.92.109.46:7001/uploadfile',
+                // mergefile: 'http://182.92.109.46:7001/mergefile',
+                checkfile: '/checkfile',
+                uploadfile: '/uploadfile',
+                mergefile: '/mergefile',
+            },
+            methods: {
+                chunkAfter() {
+                    // 清空容器
+                    squareGroup.innerHTML = ''
+                    setElStyle(squareRegion, 'display', 'block')
+                    let len = this.chunks.length
 
+                    // 每行的个数
+                    let lineCount = Math.round(Math.sqrt(len))
+                    if(length === 2) lineCount = 2
+                    // 多少行
+                    let rowCount = Math.ceil(len / lineCount)
+
+                    // 取余判断最后一行，取不到就用 linecount
+                    let endCount = len % lineCount > 0 ? len % lineCount : lineCount
+
+                    // 分组长度
+                    let divGroup = new Array(rowCount).fill(new Array(lineCount))
+
+                    // 进度条需要使用
+                    this.divWidth = parseInt(imgWidth / lineCount)
+                    this.divHeight = parseInt(imgHeight / rowCount)
+
+                    // 最后一排排满了 div宽度保持一致，否者剩余的div平分剩余宽度
+                    let endHWidth = endCount === lineCount ? this.divWidth : imgWidth / endCount
+
+                    createChunkElGroup({
+                        divWidth: this.divWidth,
+                        divHeight: this.divHeight,
+                        endHWidth,
+                        divGroup,
+                        endCount
+                    })
+                },
+                chunkProgress(index) {
+                    // 分片进度变化 修改高度
+                    setElStyle(divGroupList1[index], 'height', (100 - this.chunks[index].progress) / 100 * this.divHeight + 'px')
+                    // 已上传完的大小，总进度
+                    const loaded = this.chunks.map(item => item.chunk.size * item.progress )
+                        .reduce((acc, cur) => acc + cur, 0)
+                    setElStyle(squareRegion, 'height', 100 - (loaded / this.file.size).toFixed(2) + '%')
+
+                    // 进度数字
+                    progressGroupCount.innerText = (loaded / this.file.size).toFixed(0) + '%'
+
+                    // 上传完 重置样式
+                    if(loaded / this.file.size === 100) {
+                        setElStyle(squareRegion, 'display', 'none')
+                        setElStyle(squareRegion, 'height', '100%')
+                    }
+                }
+            }
+        });
 
     function setCanvas(imgFile) {
         return new Promise(resolve => {
-            var a = new Image()
-            a.onload = () => {
+            var img = new Image()
+            img.onload = () => {
                 let [marginTop, marginLeft, width, height] = Array(4).fill(0)
                 let ratio = a.width / a.height
-                if(ratio > 1) {
-                    width = 500
-                    
-                    height = parseInt(a.height / (a.width / 500))
-                    marginTop = (500 - height) / 2
-                } else {
-                    height = 500
-                    
-                    width = parseInt(a.width / (a.height / 500))
-                    marginLeft = (500 - width) / 2
-                }
+                if (ratio > 1) {
+                    width = 400
 
+                    height = parseInt(a.height / (a.width / 400))
+                    marginTop = (400 - height) / 2
+                } else {
+                    height = 400
+
+                    width = parseInt(a.width / (a.height / 400))
+                    marginLeft = (400 - width) / 2
+                }
+                imgWidth = width;
+                imgHeight = height;
+                // 方块容器大小 位置
                 setElStyle(squareGroup, 'width', width + 'px')
                 setElStyle(squareGroup, 'height', height + 'px')
                 setElStyle(squareGroup, 'left', marginLeft + 'px')
                 setElStyle(squareGroup, 'top', marginTop + 'px')
-
-                ctx.drawImage(a, marginLeft, marginTop, width, height)
-
+                ctx1.drawImage(img, marginLeft, marginTop, width, height)
+                ctx2.drawImage(img, marginLeft, marginTop, width, height)
+                ctx3.drawImage(img, marginLeft, marginTop, width, height)
                 resolve(ratio)
             }
-            a.src = URL.createObjectURL(imgFile)
+            img.src = URL.createObjectURL(imgFile)
         })
+    }
+    btn.onclick = function () {
+        input.click()
+    }
+    input.onchange = async function upload(e) {
+        let file = e.target.files[0]
+        if(!file) return
+        // 清理画布
+        ctx1.clearRect(0, 0, 400, 400);
+        ctx2.clearRect(0, 0, 400, 400);
+        ctx3.clearRect(0, 0, 400, 400);
+
+        setElStyle(squareRegion, 'display', 'none')
+        setElStyle(squareRegion, 'height', '100%')
+
+        progressGeneralCount.innerText = ''
+        progressGroupCount.innerText = ''
+
+        // 绘制
+        let ratio = await setCanvas(file)
+
+        
+        up.uploadFile(file, async function (res, next) {
+            let uploadList = res.data.data.uploadList
+            // 文件验证 待开发
+            if(res.data.data.uploaded && uploadList.length === 0) {
+                uploadList = this.chunks.map((item, index) => this.hash + '-' + index)
+                document.querySelectorAll('#square_group .child').forEach(el => {
+                    setElStyle(el, 'height', '0px')
+                })
+                setElStyle(squareRegion, 'height', '0%')
+                let count = 0
+                let interval = setInterval(() => {
+                    count += 2
+                    if(count >= 100) clearInterval(interval)
+                    progressGroupCount.innerText = count + '%'
+                }, 10);
+                // squareRegion
+            }
+            // 上传
+            let data = await next(uploadList)
+        })
+
+        // 普通上传
+        uploadGeneral(file)
         
     }
 
+    async function uploadGeneral(file) {
+        let from = new FormData()
+        from.append('file', file)
+        axios.post('http://127.0.0.1:7001/sumupload', from, {
+            onUploadProgress(progress) {
+                let loaded = (1 - Number((progress.loaded / progress.total).toFixed(2))) * 100 
+                setElStyle(squareGeneral, 'height', loaded + '%')
+                progressGeneralCount.innerText = (100 - loaded ).toFixed(0) + '%'
+            }
+        })
+    }
 </script>
 
 </html>

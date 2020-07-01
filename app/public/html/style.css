@@ -1,11 +1,15 @@
+.main_content {
+    display: flex;
+    justify-content: space-around;
+}
+.content_item {
+    text-align: center;
+}
 .preview_content {
     position: relative;
-    /* display: flex;
-    justify-content: center; */
-    width: 500px;
-    height: 500px;
+    width: 400px;
+    height: 400px;
     margin: 20px auto;
-    
 }
 .preview_content canvas {
     border: 1px solid #ccc;
@@ -13,11 +17,32 @@
 .preview_img {
     width: 100%;
     height: auto;
-    
 }
 .square_group {
     position: absolute;
-    background: #ccc;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    display: flex;
+    flex-wrap: wrap;
+}
+.square_group .group {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+.square_group .group_sum {
+    height: 100%;
+}
+.square_group .group_sum .child {
+    width: 100%;
+}
+.square_group .child {
+    background: #a0cfff;
+    /* border: 1px solid #000; */
+    transition: height .5s;
+    opacity: .6;
 }
 .btn_group {
     /* display: flex;
