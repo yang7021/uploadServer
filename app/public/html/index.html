@@ -253,7 +253,7 @@
     function uploadGeneral(file) {
         let from = new FormData()
         from.append('file', file)
-        axios.post('http://127.0.0.1:7001/sumupload', from, {
+        axios.post('/sumupload', from, {
             onUploadProgress(progress) {
                 let loaded = (1 - Number((progress.loaded / progress.total).toFixed(2))) * 100 
                 setElStyle(squareGeneral, 'height', loaded + '%')
