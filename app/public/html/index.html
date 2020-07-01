@@ -103,6 +103,7 @@
                 // 添加到数组 供进度变化使用
                 divGroupList1.push(el)
             }
+            // 添加到容器
             squareGroup.append(group)
         }
     }
@@ -178,16 +179,16 @@
             var img = new Image()
             img.onload = () => {
                 let [marginTop, marginLeft, width, height] = Array(4).fill(0)
-                let ratio = a.width / a.height
+                let ratio = img.width / img.height
                 if (ratio > 1) {
                     width = 400
 
-                    height = parseInt(a.height / (a.width / 400))
+                    height = parseInt(img.height / (img.width / 400))
                     marginTop = (400 - height) / 2
                 } else {
                     height = 400
 
-                    width = parseInt(a.width / (a.height / 400))
+                    width = parseInt(img.width / (img.height / 400))
                     marginLeft = (400 - width) / 2
                 }
                 imgWidth = width;
@@ -241,18 +242,15 @@
                     if(count >= 100) clearInterval(interval)
                     progressGroupCount.innerText = count + '%'
                 }, 10);
-                // squareRegion
             }
             // 上传
             let data = await next(uploadList)
         })
-
         // 普通上传
-        uploadGeneral(file)
-        
+        uploadGeneral(file)   
     }
 
-    async function uploadGeneral(file) {
+    function uploadGeneral(file) {
         let from = new FormData()
         from.append('file', file)
         axios.post('http://127.0.0.1:7001/sumupload', from, {
