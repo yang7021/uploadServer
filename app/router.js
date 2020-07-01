@@ -20,6 +20,10 @@ module.exports = app => {
   // 查询文件是否上传，是否有切片上传
   router.post('/checkfile', controller.util.checkfile)
 
+  // 普通上传
+  router.post('/sumupload', controller.util.sumupload)
+
+
   // router.group({ name: 'user', prefix: '/user' }, router => {
   //   const { info, register, login, verify } = controller.user
 

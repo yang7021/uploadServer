@@ -37,7 +37,6 @@ class UserController extends BaseController {
     // public/hash文件夹/hash+index
     const { ctx } = this
     const { name, hash } = ctx.request.body
-    console.log(42, name, hash)
 
     // 上传的文件为空 直接回上传成功
     if (!name) {
@@ -47,14 +46,14 @@ class UserController extends BaseController {
 
     const chunkPath = path.resolve(this.config.UPLOAD_DIR, hash)
 
-    // const filePath = path.resolve() // 文件最终存储的位置，合并之后
-    console.log(name, hash, file)
-
+    // 目录是否存在
     if (!fse.existsSync(chunkPath)) {
       await fse.mkdir(chunkPath)
     }
-
-    await fse.move(file.filepath, `${chunkPath}/${name}`)
+    // 文件是否存在
+    if (!fse.pathExistsSync(`${chunkPath}/${name}`)) {
+      await fse.move(file.filepath, `${chunkPath}/${name}`)
+    }
 
     this.message('切片上传成功')
 
@@ -83,6 +82,28 @@ class UserController extends BaseController {
       uploaded,
       uploadList,
       url: this.config.downloadDomainName + `/${hash}.${ext}`,
+    })
+  }
+
+  async sumupload() {
+    const { ctx } = this
+
+    const file = ctx.request.files[0]
+
+    const filePath = path.resolve(this.config.UPLOAD_DIR, `${file.filename}`) // 文件最终存储的位置
+
+    // if (!fse.existsSync(filePath)) {
+    //   await fse.mkdir(filePath)
+    // }
+
+    // console.log(111, filePath, filePath)
+    // console.log(111, filePath, fse.ensureFileSync(filePath))
+    if (!fse.pathExistsSync(filePath)) {
+      await fse.move(file.filepath, `${this.config.UPLOAD_DIR}/${file.filename}`)
+    }
+
+    this.success({
+      url: this.config.downloadDomainName + `/${file.filename}`,
     })
   }
 
